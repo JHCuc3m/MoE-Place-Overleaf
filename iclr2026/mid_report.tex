@@ -212,6 +212,40 @@ As ground truth, we measure per-expert sensitivity:
 Positive sensitivity indicates the expert is important (removal hurts quality).
 Negative sensitivity indicates the expert is \emph{harmful} (removal helps quality).
 
+\subsection{Baselines}
+
+We compare our structural-score-based pruning against the following baselines:
+
+\paragraph{No pruning (primary baseline).}
+The unpruned model serves as our primary baseline, establishing the quality ceiling.
+All pruning methods are evaluated by their perplexity increase relative to this baseline.
+
+\paragraph{Planned baselines (in progress).}
+We are implementing additional baselines for the final report:
+\begin{itemize}
+    \item \textbf{Random pruning:} Remove experts uniformly at random
+    \item \textbf{Utilization-based pruning:} Remove least-frequently-selected experts first
+    \item \textbf{Magnitude-based pruning:} Remove experts with smallest weight norms first
+\end{itemize}
+These will allow us to determine whether co-activation-based metrics outperform
+simpler heuristics.
+
+\subsection{Code}
+
+All experiment code is implemented by us and available at
+\url{https://github.com/JHCuc3m/MoE-Place}.
+The codebase includes:
+\begin{itemize}
+    \item Co-activation statistics collection via PyTorch forward hooks
+    \item Structural metric computation (utilization, redundancy, centrality)
+    \item Expert masking via router weight modification
+    \item Sensitivity analysis pipeline
+    \item Visualization tools for co-activation matrices and sensitivity heatmaps
+\end{itemize}
+We use HuggingFace \texttt{transformers}~\citep{wolf2020huggingface} for model loading
+and \texttt{datasets} for data loading.
+All other analysis code is written from scratch.
+
 % ── 4. Experiments ────────────────────────────────────────────────────────────
 \section{Preliminary Experiments \& Results}
 
@@ -233,6 +267,13 @@ We use WikiText-2~\citep{merity2017pointer} for both calibration and evaluation:
 \paragraph{Hardware.}
 Experiments run on NVIDIA H100 80GB GPUs via Georgia Tech PACE cluster, using
 PyTorch 2.6 and CUDA 12.4.
+
+\paragraph{Evaluation method.}
+We evaluate model quality using \textbf{perplexity} on the WikiText-2 test set.
+Lower perplexity indicates better language modeling performance.
+For pruning evaluation, we report the perplexity increase relative to the unpruned
+baseline---positive values indicate quality degradation, while negative values
+(observed for harmful experts) indicate quality improvement.
 
 \subsection{Baseline and Structural Score Pruning}
 
