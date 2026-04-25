@@ -45,18 +45,18 @@ the project.
 Mixture-of-Experts (MoE) models achieve computational efficiency by routing each token
 to a sparse subset of expert networks, but the large number of experts creates
 memory and computational overhead.
-We investigate whether co-activation patterns in routing decisions can identify
-experts that are safe to prune without significant quality degradation.
+We investigate whether co-activation patterns in routing decisions can identify experts that are redundant or harmful, enabling 
+systematic expert pruning in MoE models.
 Building on the expert collaboration analysis from Occult~\citep{luo2025occult},
 we construct co-activation matrices from routing statistics and develop structural
 metrics (utilization, redundancy, centrality) to rank experts for pruning.
-Our experiments on TinyMixtral-4x248M-MoE reveal a surprising finding: structural
+Our experiments on TinyMixtral-4x248M-MoE so far finds that structural
 metrics based on co-activation alone do not reliably predict pruning impact.
-More strikingly, sensitivity analysis shows that one expert (Expert~2) is
-\emph{harmful} across all 12 layers---disabling it \emph{improves} perplexity by
+However, sensitivity analysis shows that one expert (Expert~2) is
+\emph{harmful} across all 12 layers of our TinyMixtral model ---disabling it \emph{improves} perplexity by
 80--160 points.
-These results suggest that co-activation analysis can identify not just redundant
-experts but actively harmful ones, opening new directions for MoE model compression.
+These results suggest that co-activation analysis theoretically could have room to identify redundant
+and harmful experts, opening new directions for MoE model compression.
 \end{abstract}
 
 % ── 1. Introduction ───────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ However, maintaining a large pool of experts creates memory pressure and computa
 overhead, particularly during inference where all expert weights must be stored even
 though only a fraction are used per token.
 
-Our initial proposal~\citep{luo2025occult} focused on \emph{hardware-aware expert
+Our initial proposal focused on \emph{hardware-aware expert
 placement}---using co-activation patterns to optimize expert execution order and
 exploit GPU memory hierarchy for faster inference.
 However, during our investigation of co-activation structure, we identified a more
@@ -124,6 +124,10 @@ This coarse-grained approach preserves the MoE routing structure while reducing
 the expert pool size.
 Our contribution is using co-activation patterns, rather than weight magnitudes
 or gradients, to guide expert-level pruning decisions.
+\citet{he2024demystifying} proposed a unified compression framework
+combining expert-level weight pruning, quantization, and structured
+module removal, establishing that utilization and weight magnitude
+are the dominant signals used in existing work.
 
 % ── 3. Approach ───────────────────────────────────────────────────────────────
 \section{Approach}
@@ -189,7 +193,7 @@ We combine metrics into a single pruning score:
 \begin{equation}
     \text{Score}_i = \alpha (1 - \text{Utilization}_i) + \beta \cdot \text{Redundancy}_i + \gamma (1 - \text{Centrality}_i)
 \end{equation}
-with $\alpha=0.3$, $\beta=0.4$, $\gamma=0.3$.
+with $\alpha=0.3$, $\beta=0.4$, $\gamma=0.3$ (these values are subject to later refinements).
 Higher scores indicate better pruning candidates according to structural metrics.
 
 \subsection{Expert Masking}
@@ -322,8 +326,6 @@ removal \emph{improves} quality. Bold indicates most sensitive expert per layer.
 \end{tabular}
 \end{table}
 
-Figure~\ref{fig:sensitivity} visualizes these results as a heatmap, clearly showing
-the harmful Expert~2 column (blue) and the critical edge-layer experts (red).
 
 \begin{figure}[h]
 \centering
@@ -395,19 +397,17 @@ Determine whether harmful experts are model-specific or a general phenomenon
 in pretrained MoE models.
 
 \paragraph{Algorithmic improvements.}
-Develop a combined scoring function that incorporates sensitivity estimation
+Develop an improved scoring function that approximates sensitivity estimation better
 without requiring exhaustive per-expert evaluation.
-Explore gradient-based importance approximations as a faster alternative to
-full sensitivity analysis.
 Test whether pruning Expert~2 enables further pruning of other experts.
 
 \paragraph{Stretch goals.}
 Scale experiments to larger MoE models (Mixtral-8x7B) if PACE resources permit.
-Implement CAEP-Merge: merging co-activated experts instead of pruning.
+Implement merging of co-activated experts instead of pruning.
 Develop online/adaptive methods that identify harmful experts during inference.
 
 % ── References ────────────────────────────────────────────────────────────────
-\bibliography{mid_references}
+\bibliography{mid_references,final_references}
 \bibliographystyle{iclr2026_conference}
 
 \end{document}
